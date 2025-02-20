@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>gitee-cli</ToolCommandName>
+		<PackageId>gitee-cli</PackageId>
+		<Version>0.1.0</Version>
+		<Authors>timetickme</Authors>
+		<Company>timetickme</Company>
+		<Description>Gitee commandline tool</Description>
+		<PackageTags>gitee-cli</PackageTags>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="CliWrap" Version="3.8.0" />
+		<PackageReference Include="ConsoleAppFramework" Version="5.4.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Flurl.Http" Version="4.0.2" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
+
+</Project>
