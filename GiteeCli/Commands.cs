@@ -1,5 +1,6 @@
 ﻿using CliWrap;
 using ConsoleAppFramework;
+using Spectre.Console;
 
 namespace GiteeCli
 {
@@ -37,65 +38,92 @@ namespace GiteeCli
         [Command("list")]
         public async Task List()
         {
-            try
-            {
-                var token = await File.ReadAllTextAsync(tokenFile);
-                var repos = await GiteeApi.GetRepoUrls(token);
-                int index = 1;
-                foreach (var repo in repos)
-                {
-                    Console.WriteLine($"{index,3}   {repo}");
-                    index++;
-                }
-                Console.WriteLine();
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        try
+                        {
+                            var token = await File.ReadAllTextAsync(tokenFile);
 
-                await File.WriteAllLinesAsync(repoFile, repos);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"异常：{ex.Message}");
-            }
+                            ctx.Spinner(Spinner.Known.Star);
+
+                            var repos = await GiteeApi.GetRepoUrls(token);
+
+                            var table = new Table();
+
+                            table.AddColumn("序号");
+                            table.AddColumn("地址");
+
+                            int index = 1;
+                            foreach (var repo in repos)
+                            {
+                                table.AddRow($"{index}", $"[green]{repo}[/]");
+                                index++;
+                            }
+                            AnsiConsole.Write(table);
+
+                            await File.WriteAllLinesAsync(repoFile, repos);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"异常：{ex.Message}");
+                        }
+                    }
+                );
         }
 
         [Command("clone")]
         public async Task CloneById(int id = 0)
         {
-            try
-            {
-                if (!File.Exists(repoFile))
-                {
-                    Console.WriteLine("请先执行：GiteeCli list");
-                    return;
-                }
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        try
+                        {
+                            if (!File.Exists(repoFile))
+                            {
+                                AnsiConsole.WriteLine("请先执行：GiteeCli list");
+                                return;
+                            }
 
-                var repos = await File.ReadAllLinesAsync("repos.txt");
+                            var repos = await File.ReadAllLinesAsync("repos.txt");
 
-                var urls = new List<string>();
-                if (id > 0)
-                {
-                    urls.Add(repos[id - 1]);
-                }
-                else
-                {
-                    urls.AddRange(repos);
-                }
+                            var urls = new List<string>();
+                            if (id > 0)
+                            {
+                                urls.Add(repos[id - 1]);
+                            }
+                            else
+                            {
+                                urls.AddRange(repos);
+                            }
 
-                foreach (var url in urls)
-                {
-                    Console.WriteLine($"克隆仓库：{url}");
+                            foreach (var url in urls)
+                            {
+                                AnsiConsole.WriteLine($"克隆仓库：{url}");
 
-                    var cmd = Cli.Wrap("git")
-                        .WithArguments(args => args.Add("clone").Add(url).Add("--depth").Add(20));
+                                var cmd = Cli.Wrap("git")
+                                    .WithArguments(args =>
+                                        args.Add("clone").Add(url).Add("--depth").Add(20)
+                                    );
 
-                    await cmd.ExecuteAsync();
-                }
+                                await cmd.ExecuteAsync();
+                            }
 
-                Console.WriteLine("克隆结束");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"{ex.Message}");
-            }
+                            AnsiConsole.WriteLine("克隆结束");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"{ex.Message}");
+                        }
+                    }
+                );
         }
     }
 }
