@@ -1,38 +1,33 @@
-﻿using CliWrap;
+﻿using System;
+using CliWrap;
 using ConsoleAppFramework;
+using GiteeCli.Models;
 using Spectre.Console;
 
 namespace GiteeCli
 {
     internal class Commands
     {
-        private static readonly string giteeDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "GiteeCli"
-        );
-        private static readonly string repoFile = Path.Combine(giteeDir, "repos.txt");
-        private static readonly string tokenFile = Path.Combine(giteeDir, "token.txt");
+        private readonly GiteeApi api;
 
         public Commands()
         {
-            if (!Directory.Exists(giteeDir))
-            {
-                Directory.CreateDirectory(giteeDir);
-            }
+            var token = Utils.GetToken();
+            api = new GiteeApi(token);
         }
 
-        [Command("")]
-        public async Task SetToken(string token)
+        [Command("set token")]
+        public void SetToken(string token)
         {
-            try
-            {
-                await File.WriteAllTextAsync(tokenFile, token);
-                Console.WriteLine("Token 设置成功");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"异常：{ex.Message}");
-            }
+            Utils.SetToken(token);
+            AnsiConsole.MarkupLine("[green]设置成功[/]");
+        }
+
+        [Command("get token")]
+        public void GetToken()
+        {
+            var token = Utils.GetToken();
+            AnsiConsole.MarkupLine($"[green]{token}[/]");
         }
 
         [Command("list")]
@@ -46,26 +41,15 @@ namespace GiteeCli
                     {
                         try
                         {
-                            var token = await File.ReadAllTextAsync(tokenFile);
-
-                            ctx.Spinner(Spinner.Known.Star);
-
-                            var repos = await GiteeApi.GetRepoUrls(token);
-
-                            var table = new Table();
-
-                            table.AddColumn("序号");
-                            table.AddColumn("地址");
-
-                            int index = 1;
-                            foreach (var repo in repos)
+                            var result = await api.GetRepoUrls();
+                            if (result.Code != 0)
                             {
-                                table.AddRow($"{index}", $"[green]{repo}[/]");
-                                index++;
+                                AnsiConsole.WriteLine(result.Message);
+                                return;
                             }
+                            Utils.SaveRepo(result.Data);
+                            var table = BuildRepoTable(result.Data);
                             AnsiConsole.Write(table);
-
-                            await File.WriteAllLinesAsync(repoFile, repos);
                         }
                         catch (Exception ex)
                         {
@@ -86,22 +70,22 @@ namespace GiteeCli
                     {
                         try
                         {
-                            if (!File.Exists(repoFile))
+                            var repos = Utils.LoadRepo();
+
+                            if (repos.Count < 1)
                             {
-                                AnsiConsole.WriteLine("请先执行：GiteeCli list");
+                                AnsiConsole.MarkupLine("请先执行: [red] gitee-cli list [/]");
                                 return;
                             }
-
-                            var repos = await File.ReadAllLinesAsync("repos.txt");
 
                             var urls = new List<string>();
                             if (id > 0)
                             {
-                                urls.Add(repos[id - 1]);
+                                urls.Add(repos[id - 1].SshUrl);
                             }
                             else
                             {
-                                urls.AddRange(repos);
+                                urls.AddRange(repos.Select(r => r.SshUrl));
                             }
 
                             foreach (var url in urls)
@@ -124,6 +108,85 @@ namespace GiteeCli
                         }
                     }
                 );
+        }
+
+        [Command("delete")]
+        public async Task Delete(int id)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        try
+                        {
+                            var repos = Utils.LoadRepo();
+                            var repo = repos[id - 1];
+                            await api.DeleteRepo(repo.HttpUrl);
+                            AnsiConsole.WriteLine($"已删除仓库：{repo.FullName}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"{ex.Message}");
+                        }
+                    }
+                );
+        }
+
+        [Command("star list")]
+        public async Task StarList()
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        try
+                        {
+                            var result = await api.GetStarRepo();
+                            if (result.Code != 0)
+                            {
+                                AnsiConsole.WriteLine(result.Message);
+                                return;
+                            }
+
+                            var starRepos = result.Data;
+                            Table table = BuildRepoTable(starRepos);
+                            AnsiConsole.Write(table);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"{ex.Message}");
+                        }
+                    }
+                );
+        }
+
+        private static Table BuildRepoTable(List<Repo> starRepos)
+        {
+            var table = new Table();
+            table.Border = TableBorder.Rounded;
+
+            table.AddColumn("全名").Ascii2Border();
+            table.AddColumn("地址").Ascii2Border();
+            table.AddColumn("Star").Ascii2Border();
+            table.AddColumn("语言").Ascii2Border();
+            table.AddColumn("描述").Ascii2Border();
+
+            foreach (var repo in starRepos)
+            {
+                table.AddRow(
+                    $"{repo.FullName}",
+                    $"[green]{repo.HttpUrl}[/]",
+                    $"{repo.StargazersCount}",
+                    repo.Language,
+                    repo.Description
+                );
+            }
+
+            return table;
         }
     }
 }
