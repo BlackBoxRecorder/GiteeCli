@@ -69,9 +69,22 @@ namespace Test
             Assert.Equal(32, token.Length);
 
             var api = new GiteeApi(token);
-            var result = await api.GetRepoUrls();
+            var result = await api.GetRepos();
 
             Assert.Equal(0, result.Code);
+        }
+
+        [Fact]
+        public async Task TestGetGists()
+        {
+            var token = Utils.GetToken();
+            Assert.Equal(32, token.Length);
+
+            var api = new GiteeApi(token);
+            var result = await api.GetGists();
+
+            Assert.Equal(0, result.Code);
+            Assert.Equal("4a2fmjyczbidv9se0pk1r33", result.Data[0].Id);
         }
     }
 }

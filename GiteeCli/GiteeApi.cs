@@ -16,7 +16,7 @@ namespace GiteeCli
             _token = token;
         }
 
-        public async Task<ApiResult<List<Repo>>> GetRepoUrls()
+        public async Task<ApiResult<List<Repo>>> GetRepos()
         {
             var param = new
             {
@@ -55,7 +55,7 @@ namespace GiteeCli
 
                 if (resp.StatusCode == 204)
                 {
-                    return new ApiResult<string>(0, "") { Data = "" };
+                    return new ApiResult<string>(0, "删除仓库") { Data = "" };
                 }
 
                 var data = await resp.ResponseMessage.Content.ReadAsStringAsync();
@@ -81,7 +81,7 @@ namespace GiteeCli
 
                 if (resp.StatusCode == 204)
                 {
-                    return new ApiResult<string>(0, "") { Data = "" };
+                    return new ApiResult<string>(0, "清空仓库") { Data = "" };
                 }
 
                 var data = await resp.ResponseMessage.Content.ReadAsStringAsync();
@@ -115,7 +115,7 @@ namespace GiteeCli
                 var json = await resp.GetStringAsync();
                 var repos = JsonToRepos(json);
 
-                return new ApiResult<List<Repo>>(0, "请求成功") { Data = repos };
+                return new ApiResult<List<Repo>>(0, "请求用户星标仓库成功") { Data = repos };
             }
             catch (Exception ex)
             {
@@ -137,7 +137,7 @@ namespace GiteeCli
                     return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = "" };
                 }
 
-                return new ApiResult<string>(0, "请求成功") { Data = "" };
+                return new ApiResult<string>(0, "取消星标仓库成功") { Data = "" };
             }
             catch (Exception ex)
             {
@@ -145,7 +145,7 @@ namespace GiteeCli
             }
         }
 
-        public async Task<ApiResult<string>> GetGists()
+        public async Task<ApiResult<List<Gists>>> GetGists()
         {
             try
             {
@@ -154,14 +154,18 @@ namespace GiteeCli
 
                 if (resp.StatusCode != 200)
                 {
-                    return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = "" };
+                    return new ApiResult<List<Gists>>(resp.StatusCode, "请求失败") { Data = [] };
                 }
 
-                return new ApiResult<string>(0, "请求成功") { Data = "" };
+                var json = await resp.ResponseMessage.Content.ReadAsStringAsync();
+
+                var gists = JsonToGists(json);
+
+                return new ApiResult<List<Gists>>(0, "请求成功") { Data = gists };
             }
             catch (Exception ex)
             {
-                return new ApiResult<string>(-1, ex.Message) { Data = "" };
+                return new ApiResult<List<Gists>>(-1, ex.Message) { Data = [] };
             }
         }
 
@@ -199,6 +203,35 @@ namespace GiteeCli
             }
 
             return repos;
+        }
+
+        public static List<Gists> JsonToGists(string json)
+        {
+            var items = JArray.Parse(json);
+            var gists = new List<Gists>();
+
+            foreach (var item in items)
+            {
+                var id = item["id"]?.ToString();
+                var description = item["description"]?.ToString();
+                var filesJson =
+                    item["files"]?.ToString()
+                    ?? throw new InvalidCastException("gists files json 序列化异常");
+
+                var files = JsonConvert.DeserializeObject<Dictionary<string, GistsFile>>(filesJson);
+
+#pragma warning disable CS8601 // 引用类型赋值可能为 null。
+                var gist = new Gists()
+                {
+                    Id = id,
+                    Description = description,
+                    Files = files,
+                };
+#pragma warning restore CS8601 // 引用类型赋值可能为 null。
+                gists.Add(gist);
+            }
+
+            return gists;
         }
     }
 }

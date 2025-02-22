@@ -41,7 +41,7 @@ namespace GiteeCli
                     {
                         try
                         {
-                            var result = await api.GetRepoUrls();
+                            var result = await api.GetRepos();
                             if (result.Code != 0)
                             {
                                 AnsiConsole.WriteLine(result.Message);
@@ -136,6 +136,36 @@ namespace GiteeCli
 
         [Command("star list")]
         public async Task StarList()
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        try
+                        {
+                            var result = await api.GetStarRepo();
+                            if (result.Code != 0)
+                            {
+                                AnsiConsole.WriteLine(result.Message);
+                                return;
+                            }
+
+                            var starRepos = result.Data;
+                            Table table = BuildRepoTable(starRepos);
+                            AnsiConsole.Write(table);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"{ex.Message}");
+                        }
+                    }
+                );
+        }
+
+        [Command("star clone")]
+        public async Task GistsList()
         {
             await AnsiConsole
                 .Status()
