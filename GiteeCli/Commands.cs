@@ -1,42 +1,50 @@
-﻿using CliWrap;
+﻿using System;
+using CliWrap;
 using ConsoleAppFramework;
+using GiteeCli.Models;
 using Spectre.Console;
 
 namespace GiteeCli
 {
     internal class Commands
     {
-        private static readonly string giteeDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "GiteeCli"
-        );
-        private static readonly string repoFile = Path.Combine(giteeDir, "repos.txt");
-        private static readonly string tokenFile = Path.Combine(giteeDir, "token.txt");
+        private readonly CommandHandlers _handlers;
 
         public Commands()
         {
-            if (!Directory.Exists(giteeDir))
-            {
-                Directory.CreateDirectory(giteeDir);
-            }
+            var token = Utils.GetToken();
+            var api = new GiteeApi(token);
+
+            _handlers = new CommandHandlers(api);
         }
 
-        [Command("")]
-        public async Task SetToken(string token)
+        /// <summary>
+        /// 设置 Gitee API Token
+        /// </summary>
+        /// <param name="token">token</param>
+        [Command("set token")]
+        public void SetToken(string token)
         {
-            try
-            {
-                await File.WriteAllTextAsync(tokenFile, token);
-                Console.WriteLine("Token 设置成功");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"异常：{ex.Message}");
-            }
+            Utils.SetToken(token);
+            AnsiConsole.MarkupLine("[green]设置成功[/]");
         }
 
+        /// <summary>
+        /// 获取 Gitee API Token
+        /// </summary>
+        [Command("get token")]
+        public void GetToken()
+        {
+            var token = Utils.GetToken();
+            AnsiConsole.MarkupLine($"[green]{token}[/]");
+        }
+
+        /// <summary>
+        /// 列出所有仓库
+        /// </summary>
+        /// <returns></returns>
         [Command("list")]
-        public async Task List()
+        public async Task ListRepo()
         {
             await AnsiConsole
                 .Status()
@@ -44,39 +52,18 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        try
-                        {
-                            var token = await File.ReadAllTextAsync(tokenFile);
-
-                            ctx.Spinner(Spinner.Known.Star);
-
-                            var repos = await GiteeApi.GetRepoUrls(token);
-
-                            var table = new Table();
-
-                            table.AddColumn("序号");
-                            table.AddColumn("地址");
-
-                            int index = 1;
-                            foreach (var repo in repos)
-                            {
-                                table.AddRow($"{index}", $"[green]{repo}[/]");
-                                index++;
-                            }
-                            AnsiConsole.Write(table);
-
-                            await File.WriteAllLinesAsync(repoFile, repos);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"异常：{ex.Message}");
-                        }
+                        await _handlers.RepoListHandler();
                     }
                 );
         }
 
+        /// <summary>
+        /// 克隆仓库，如果参数为空则克隆所有仓库到当前目录
+        /// </summary>
+        /// <param name="name">仓库名称</param>
+        /// <returns></returns>
         [Command("clone")]
-        public async Task CloneById(int id = 0)
+        public async Task CloneById(string name = "")
         {
             await AnsiConsole
                 .Status()
@@ -84,44 +71,141 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        try
-                        {
-                            if (!File.Exists(repoFile))
-                            {
-                                AnsiConsole.WriteLine("请先执行：GiteeCli list");
-                                return;
-                            }
+                        await _handlers.RepoCloneHandler(name);
+                    }
+                );
+        }
 
-                            var repos = await File.ReadAllLinesAsync("repos.txt");
+        /// <summary>
+        /// 删除一个仓库
+        /// </summary>
+        /// <param name="name">仓库名称</param>
+        /// <returns></returns>
+        [Command("delete")]
+        public async Task DeleteRepo(string name)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.RepoDeleteHandler(name);
+                    }
+                );
+        }
 
-                            var urls = new List<string>();
-                            if (id > 0)
-                            {
-                                urls.Add(repos[id - 1]);
-                            }
-                            else
-                            {
-                                urls.AddRange(repos);
-                            }
+        /// <summary>
+        /// 列出 Star 的仓库
+        /// </summary>
+        /// <returns></returns>
+        [Command("star list")]
+        public async Task StarList()
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.StarListHandler();
+                    }
+                );
+        }
 
-                            foreach (var url in urls)
-                            {
-                                AnsiConsole.WriteLine($"克隆仓库：{url}");
+        /// <summary>
+        /// 列出用户的代码片段
+        /// </summary>
+        /// <returns></returns>
+        [Command("gists list")]
+        public async Task GistsList()
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.GistsListHandler();
+                    }
+                );
+        }
 
-                                var cmd = Cli.Wrap("git")
-                                    .WithArguments(args =>
-                                        args.Add("clone").Add(url).Add("--depth").Add(20)
-                                    );
+        /// <summary>
+        /// 创建代码片段
+        /// </summary>
+        /// <param name="title">代码片段名称</param>
+        /// <param name="file">代码片段文件的文件名，仅支持当前目录下的文件</param>
+        /// <returns></returns>
+        [Command("gists create")]
+        public async Task GistsList(string title, string file)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.GistsCreateHandler(title, file);
+                    }
+                );
+        }
 
-                                await cmd.ExecuteAsync();
-                            }
+        /// <summary>
+        /// 下载一个代码片段
+        /// </summary>
+        /// <param name="id">代码片段的ID</param>
+        /// <returns></returns>
+        [Command("gists download")]
+        public async Task GistsDownload(string id)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.GistsDownloadHandler(id);
+                    }
+                );
+        }
 
-                            AnsiConsole.WriteLine("克隆结束");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"{ex.Message}");
-                        }
+        /// <summary>
+        /// 删除一个代码片段
+        /// </summary>
+        /// <param name="id">代码片段的ID</param>
+        /// <returns></returns>
+        [Command("gists delete")]
+        public async Task GistsDelete(string id)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.GistsDeleteHandler(id);
+                    }
+                );
+        }
+
+        /// <summary>
+        /// 更新一个代码片段
+        /// </summary>
+        /// <param name="id">代码片段的ID</param>
+        /// <param name="title">代码片段名称</param>
+        /// <param name="file">代码片段文件的文件名，仅支持当前目录下的文件</param>
+        /// <returns></returns>
+        [Command("gists update")]
+        public async Task GistsDelete(string id, string title, string file)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.GistsUpdateHandler(id, title, file);
                     }
                 );
         }

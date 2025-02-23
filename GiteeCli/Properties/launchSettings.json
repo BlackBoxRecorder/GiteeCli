@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "GiteeCli": {
+      "commandName": "Project"
+    }
+  }
+}
