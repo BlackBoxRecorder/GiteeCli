@@ -8,6 +8,8 @@ namespace GiteeCli.Models
 {
     public class Repo
     {
+        public int Index { get; set; }
+
         /// <summary>
         /// ssh地址
         /// </summary>
@@ -21,7 +23,7 @@ namespace GiteeCli.Models
         /// <summary>
         /// 仓库全名
         /// </summary>
-        public string FullName { get; set; } = "";
+        public string Name { get; set; } = "";
 
         /// <summary>
         /// 仓库描述

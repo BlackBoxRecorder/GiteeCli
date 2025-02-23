@@ -16,6 +16,7 @@ namespace GiteeCli
         );
         private static readonly string tokenFile = Path.Combine(giteeDir, "token.txt");
         private static readonly string reposFile = Path.Combine(giteeDir, "repos.json");
+        private static readonly string userFile = Path.Combine(giteeDir, "user.txt");
 
         /// <summary>
         ///
@@ -80,11 +81,28 @@ namespace GiteeCli
                     Directory.CreateDirectory(giteeDir);
                 }
                 File.WriteAllText(tokenFile, token);
+
+                var api = new GiteeApi(token);
+                var result = api.GetUserInfo().Result;
+                if (result.Code == 0)
+                {
+                    var user = result.Data;
+                    File.WriteAllText(userFile, user);
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"异常：{ex.Message}");
             }
+        }
+
+        public static string GetUserName()
+        {
+            if (!File.Exists(userFile))
+            {
+                return "";
+            }
+            return File.ReadAllText(userFile);
         }
 
         public static void SaveRepo(List<Repo> repos)

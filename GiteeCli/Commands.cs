@@ -8,14 +8,20 @@ namespace GiteeCli
 {
     internal class Commands
     {
-        private readonly GiteeApi api;
+        private readonly CommandHandlers _handlers;
 
         public Commands()
         {
             var token = Utils.GetToken();
-            api = new GiteeApi(token);
+            var api = new GiteeApi(token);
+
+            _handlers = new CommandHandlers(api);
         }
 
+        /// <summary>
+        /// 设置 Gitee API Token
+        /// </summary>
+        /// <param name="token"></param>
         [Command("set token")]
         public void SetToken(string token)
         {
@@ -23,6 +29,9 @@ namespace GiteeCli
             AnsiConsole.MarkupLine("[green]设置成功[/]");
         }
 
+        /// <summary>
+        /// 获取 Gitee API Token
+        /// </summary>
         [Command("get token")]
         public void GetToken()
         {
@@ -30,8 +39,12 @@ namespace GiteeCli
             AnsiConsole.MarkupLine($"[green]{token}[/]");
         }
 
+        /// <summary>
+        /// 列出所有仓库
+        /// </summary>
+        /// <returns></returns>
         [Command("list")]
-        public async Task List()
+        public async Task ListRepo()
         {
             await AnsiConsole
                 .Status()
@@ -39,28 +52,18 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        try
-                        {
-                            var result = await api.GetRepos();
-                            if (result.Code != 0)
-                            {
-                                AnsiConsole.WriteLine(result.Message);
-                                return;
-                            }
-                            Utils.SaveRepo(result.Data);
-                            var table = BuildRepoTable(result.Data);
-                            AnsiConsole.Write(table);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"异常：{ex.Message}");
-                        }
+                        await _handlers.RepoListHandler();
                     }
                 );
         }
 
+        /// <summary>
+        /// 克隆仓库，如果参数为空则克隆所有仓库到当前目录
+        /// </summary>
+        /// <param name="name">仓库名称，{user}/{repo}</param>
+        /// <returns></returns>
         [Command("clone")]
-        public async Task CloneById(int id = 0)
+        public async Task CloneById(string name = "")
         {
             await AnsiConsole
                 .Status()
@@ -68,50 +71,18 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        try
-                        {
-                            var repos = Utils.LoadRepo();
-
-                            if (repos.Count < 1)
-                            {
-                                AnsiConsole.MarkupLine("请先执行: [red] gitee-cli list [/]");
-                                return;
-                            }
-
-                            var urls = new List<string>();
-                            if (id > 0)
-                            {
-                                urls.Add(repos[id - 1].SshUrl);
-                            }
-                            else
-                            {
-                                urls.AddRange(repos.Select(r => r.SshUrl));
-                            }
-
-                            foreach (var url in urls)
-                            {
-                                AnsiConsole.WriteLine($"克隆仓库：{url}");
-
-                                var cmd = Cli.Wrap("git")
-                                    .WithArguments(args =>
-                                        args.Add("clone").Add(url).Add("--depth").Add(20)
-                                    );
-
-                                await cmd.ExecuteAsync();
-                            }
-
-                            AnsiConsole.WriteLine("克隆结束");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"{ex.Message}");
-                        }
+                        await _handlers.CloneRepoHandler(name);
                     }
                 );
         }
 
+        /// <summary>
+        /// 删除一个仓库
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         [Command("delete")]
-        public async Task Delete(int id)
+        public async Task DeleteRepo(string name)
         {
             await AnsiConsole
                 .Status()
@@ -119,21 +90,15 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        try
-                        {
-                            var repos = Utils.LoadRepo();
-                            var repo = repos[id - 1];
-                            await api.DeleteRepo(repo.HttpUrl);
-                            AnsiConsole.WriteLine($"已删除仓库：{repo.FullName}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"{ex.Message}");
-                        }
+                        await _handlers.DeleteRepoHandler(name);
                     }
                 );
         }
 
+        /// <summary>
+        /// 列出 Star 的仓库
+        /// </summary>
+        /// <returns></returns>
         [Command("star list")]
         public async Task StarList()
         {
@@ -143,28 +108,16 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        try
-                        {
-                            var result = await api.GetStarRepo();
-                            if (result.Code != 0)
-                            {
-                                AnsiConsole.WriteLine(result.Message);
-                                return;
-                            }
-
-                            var starRepos = result.Data;
-                            Table table = BuildRepoTable(starRepos);
-                            AnsiConsole.Write(table);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"{ex.Message}");
-                        }
+                        await _handlers.StarListHandler();
                     }
                 );
         }
 
-        [Command("star clone")]
+        /// <summary>
+        /// 列出用户的代码片段
+        /// </summary>
+        /// <returns></returns>
+        [Command("gists list")]
         public async Task GistsList()
         {
             await AnsiConsole
@@ -173,50 +126,71 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        try
-                        {
-                            var result = await api.GetStarRepo();
-                            if (result.Code != 0)
-                            {
-                                AnsiConsole.WriteLine(result.Message);
-                                return;
-                            }
-
-                            var starRepos = result.Data;
-                            Table table = BuildRepoTable(starRepos);
-                            AnsiConsole.Write(table);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"{ex.Message}");
-                        }
+                        await _handlers.GistsListHandler();
                     }
                 );
         }
 
-        private static Table BuildRepoTable(List<Repo> starRepos)
+        /// <summary>
+        /// 创建代码片段
+        /// </summary>
+        /// <param name="title">代码片段名称</param>
+        /// <param name="file">代码片段文件的文件名，仅支持当前目录下的文件</param>
+        /// <returns></returns>
+        [Command("gists create")]
+        public async Task GistsList(string title, string file)
         {
-            var table = new Table();
-            table.Border = TableBorder.Rounded;
-
-            table.AddColumn("全名").Ascii2Border();
-            table.AddColumn("地址").Ascii2Border();
-            table.AddColumn("Star").Ascii2Border();
-            table.AddColumn("语言").Ascii2Border();
-            table.AddColumn("描述").Ascii2Border();
-
-            foreach (var repo in starRepos)
-            {
-                table.AddRow(
-                    $"{repo.FullName}",
-                    $"[green]{repo.HttpUrl}[/]",
-                    $"{repo.StargazersCount}",
-                    repo.Language,
-                    repo.Description
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.CreateGistHandler(title, file);
+                    }
                 );
-            }
+        }
 
-            return table;
+        [Command("gists download")]
+        public async Task GistsDownload(string id)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.DownloadGistHandler(id);
+                    }
+                );
+        }
+
+        [Command("gists delete")]
+        public async Task GistsDelete(string id)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.DeleteGistHandler(id);
+                    }
+                );
+        }
+
+        [Command("gists update")]
+        public async Task GistsDelete(string id, string title, string file)
+        {
+            await AnsiConsole
+                .Status()
+                .StartAsync(
+                    "Working...",
+                    async ctx =>
+                    {
+                        await _handlers.UpdateGistHandler(id, title, file);
+                    }
+                );
         }
     }
 }
