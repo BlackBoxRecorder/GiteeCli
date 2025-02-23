@@ -69,7 +69,7 @@ namespace Test
             Assert.Equal(32, token.Length);
 
             var api = new GiteeApi(token);
-            var result = await api.GetRepos();
+            var result = await api.GetAllRepos();
 
             Assert.Equal(0, result.Code);
         }
@@ -81,7 +81,7 @@ namespace Test
             Assert.Equal(32, token.Length);
 
             var api = new GiteeApi(token);
-            var result = await api.GetGists();
+            var result = await api.GetAllGists();
 
             Assert.Equal(0, result.Code);
             ///Assert.Equal("4a2fmjyczbidv9se0pk1r33", result.Data[0].Id);
@@ -96,7 +96,7 @@ namespace Test
 
             var api = new GiteeApi(token);
 
-            var result = await api.CreateGist(title, file);
+            var result = await api.CreateGists(title, file);
 
             Assert.Equal(0, result.Code);
         }

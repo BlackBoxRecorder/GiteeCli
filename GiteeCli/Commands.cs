@@ -21,7 +21,7 @@ namespace GiteeCli
         /// <summary>
         /// 设置 Gitee API Token
         /// </summary>
-        /// <param name="token"></param>
+        /// <param name="token">token</param>
         [Command("set token")]
         public void SetToken(string token)
         {
@@ -60,7 +60,7 @@ namespace GiteeCli
         /// <summary>
         /// 克隆仓库，如果参数为空则克隆所有仓库到当前目录
         /// </summary>
-        /// <param name="name">仓库名称，{user}/{repo}</param>
+        /// <param name="name">仓库名称</param>
         /// <returns></returns>
         [Command("clone")]
         public async Task CloneById(string name = "")
@@ -71,7 +71,7 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        await _handlers.CloneRepoHandler(name);
+                        await _handlers.RepoCloneHandler(name);
                     }
                 );
         }
@@ -79,7 +79,7 @@ namespace GiteeCli
         /// <summary>
         /// 删除一个仓库
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="name">仓库名称</param>
         /// <returns></returns>
         [Command("delete")]
         public async Task DeleteRepo(string name)
@@ -90,7 +90,7 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        await _handlers.DeleteRepoHandler(name);
+                        await _handlers.RepoDeleteHandler(name);
                     }
                 );
         }
@@ -146,11 +146,16 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        await _handlers.CreateGistHandler(title, file);
+                        await _handlers.GistsCreateHandler(title, file);
                     }
                 );
         }
 
+        /// <summary>
+        /// 下载一个代码片段
+        /// </summary>
+        /// <param name="id">代码片段的ID</param>
+        /// <returns></returns>
         [Command("gists download")]
         public async Task GistsDownload(string id)
         {
@@ -160,11 +165,16 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        await _handlers.DownloadGistHandler(id);
+                        await _handlers.GistsDownloadHandler(id);
                     }
                 );
         }
 
+        /// <summary>
+        /// 删除一个代码片段
+        /// </summary>
+        /// <param name="id">代码片段的ID</param>
+        /// <returns></returns>
         [Command("gists delete")]
         public async Task GistsDelete(string id)
         {
@@ -174,11 +184,18 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        await _handlers.DeleteGistHandler(id);
+                        await _handlers.GistsDeleteHandler(id);
                     }
                 );
         }
 
+        /// <summary>
+        /// 更新一个代码片段
+        /// </summary>
+        /// <param name="id">代码片段的ID</param>
+        /// <param name="title">代码片段名称</param>
+        /// <param name="file">代码片段文件的文件名，仅支持当前目录下的文件</param>
+        /// <returns></returns>
         [Command("gists update")]
         public async Task GistsDelete(string id, string title, string file)
         {
@@ -188,7 +205,7 @@ namespace GiteeCli
                     "Working...",
                     async ctx =>
                     {
-                        await _handlers.UpdateGistHandler(id, title, file);
+                        await _handlers.GistsUpdateHandler(id, title, file);
                     }
                 );
         }

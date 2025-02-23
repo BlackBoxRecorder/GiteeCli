@@ -12,7 +12,14 @@ namespace GiteeCli.Models
         public ApiResult(int code, string message)
         {
             Code = code;
-            Message = message;
+            if (code != 0)
+            {
+                Message = $"StatusCode: {code}，{message}";
+            }
+            else
+            {
+                Message = message;
+            }
         }
 
         public int Code { get; set; }

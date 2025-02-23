@@ -18,27 +18,6 @@ namespace GiteeCli
             this.api = api;
         }
 
-        public async Task GistsListHandler()
-        {
-            try
-            {
-                var result = await api.GetGists();
-                if (result.Code != 0)
-                {
-                    AnsiConsole.WriteLine(result.Message);
-                    return;
-                }
-
-                var gists = result.Data;
-                Table table = BuildGistsTable(gists);
-                AnsiConsole.Write(table);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"{ex.Message}");
-            }
-        }
-
         public async Task StarListHandler()
         {
             try
@@ -60,7 +39,27 @@ namespace GiteeCli
             }
         }
 
-        public async Task DeleteRepoHandler(string name)
+        public async Task RepoListHandler()
+        {
+            try
+            {
+                var result = await api.GetAllRepos();
+                if (result.Code != 0)
+                {
+                    AnsiConsole.WriteLine(result.Message);
+                    return;
+                }
+                Utils.SaveRepo(result.Data);
+                var table = BuildRepoTable(result.Data);
+                AnsiConsole.Write(table);
+            }
+            catch (Exception ex)
+            {
+                AnsiConsole.WriteException(ex);
+            }
+        }
+
+        public async Task RepoDeleteHandler(string name)
         {
             try
             {
@@ -80,7 +79,7 @@ namespace GiteeCli
             }
         }
 
-        public async Task CloneRepoHandler(string name)
+        public async Task RepoCloneHandler(string name)
         {
             try
             {
@@ -127,31 +126,32 @@ namespace GiteeCli
             }
         }
 
-        public async Task RepoListHandler()
+        public async Task GistsListHandler()
         {
             try
             {
-                var result = await api.GetRepos();
+                var result = await api.GetAllGists();
                 if (result.Code != 0)
                 {
                     AnsiConsole.WriteLine(result.Message);
                     return;
                 }
-                Utils.SaveRepo(result.Data);
-                var table = BuildRepoTable(result.Data);
+
+                var gists = result.Data;
+                Table table = BuildGistsTable(gists);
                 AnsiConsole.Write(table);
             }
             catch (Exception ex)
             {
-                AnsiConsole.WriteException(ex);
+                Console.WriteLine($"{ex.Message}");
             }
         }
 
-        public async Task CreateGistHandler(string title, string file)
+        public async Task GistsCreateHandler(string title, string file)
         {
             try
             {
-                var result = await api.CreateGist(title, file);
+                var result = await api.CreateGists(title, file);
                 if (result.Code != 0)
                 {
                     AnsiConsole.WriteLine(result.Message);
@@ -165,11 +165,11 @@ namespace GiteeCli
             }
         }
 
-        public async Task DownloadGistHandler(string id)
+        public async Task GistsDownloadHandler(string id)
         {
             try
             {
-                var result = await api.GetGist(id);
+                var result = await api.GetGistsById(id);
                 if (result.Code != 0)
                 {
                     AnsiConsole.WriteLine(result.Message);
@@ -192,11 +192,11 @@ namespace GiteeCli
             }
         }
 
-        public async Task DeleteGistHandler(string id)
+        public async Task GistsDeleteHandler(string id)
         {
             try
             {
-                var result = await api.DeleteGist(id);
+                var result = await api.DeleteGists(id);
                 if (result.Code != 0)
                 {
                     AnsiConsole.WriteLine(result.Message);
@@ -211,11 +211,11 @@ namespace GiteeCli
             }
         }
 
-        public async Task UpdateGistHandler(string id, string title, string file)
+        public async Task GistsUpdateHandler(string id, string title, string file)
         {
             try
             {
-                var result = await api.UpdateGist(id, title, file);
+                var result = await api.UpdateGists(id, title, file);
                 if (result.Code != 0)
                 {
                     AnsiConsole.WriteLine(result.Message);

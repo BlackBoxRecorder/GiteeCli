@@ -17,7 +17,7 @@ namespace GiteeCli
             _token = token;
         }
 
-        public async Task<ApiResult<List<Repo>>> GetRepos()
+        public async Task<ApiResult<List<Repo>>> GetAllRepos()
         {
             var param = new
             {
@@ -34,7 +34,7 @@ namespace GiteeCli
 
             if (resp.StatusCode != 200)
             {
-                return new ApiResult<List<Repo>>(resp.StatusCode, "请求失败") { Data = [] };
+                return new ApiResult<List<Repo>>(resp.StatusCode, "请求失败");
             }
 
             var json = await resp.ResponseMessage.Content.ReadAsStringAsync();
@@ -57,11 +57,11 @@ namespace GiteeCli
 
                 if (resp.StatusCode == 204)
                 {
-                    return new ApiResult<string>(0, "删除仓库") { Data = "" };
+                    return new ApiResult<string>(0, "删除仓库");
                 }
 
-                var data = await resp.ResponseMessage.Content.ReadAsStringAsync();
-                return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = data };
+                var data = await resp.GetStringAsync();
+                return new ApiResult<string>(resp.StatusCode, $"请求失败，{data}");
             }
             catch (Exception ex)
             {
@@ -84,10 +84,10 @@ namespace GiteeCli
 
                 if (resp.StatusCode == 204)
                 {
-                    return new ApiResult<string>(0, "清空仓库") { Data = "" };
+                    return new ApiResult<string>(0, "清空仓库");
                 }
 
-                var data = await resp.ResponseMessage.Content.ReadAsStringAsync();
+                var data = await resp.GetStringAsync();
                 return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = data };
             }
             catch (Exception ex)
@@ -138,18 +138,18 @@ namespace GiteeCli
 
                 if (resp.StatusCode != 204)
                 {
-                    return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = "" };
+                    return new ApiResult<string>(resp.StatusCode, "请求失败");
                 }
 
-                return new ApiResult<string>(0, "取消星标仓库成功") { Data = "" };
+                return new ApiResult<string>(0, "取消星标仓库成功");
             }
             catch (Exception ex)
             {
-                return new ApiResult<string>(-1, ex.Message) { Data = "" };
+                return new ApiResult<string>(-1, ex.Message);
             }
         }
 
-        public async Task<ApiResult<List<Gists>>> GetGists()
+        public async Task<ApiResult<List<Gists>>> GetAllGists()
         {
             try
             {
@@ -158,10 +158,10 @@ namespace GiteeCli
 
                 if (resp.StatusCode != 200)
                 {
-                    return new ApiResult<List<Gists>>(resp.StatusCode, "请求失败") { Data = [] };
+                    return new ApiResult<List<Gists>>(resp.StatusCode, "请求失败");
                 }
 
-                var json = await resp.ResponseMessage.Content.ReadAsStringAsync();
+                var json = await resp.GetStringAsync();
 
                 var gists = JsonToGists(json);
 
@@ -169,11 +169,11 @@ namespace GiteeCli
             }
             catch (Exception ex)
             {
-                return new ApiResult<List<Gists>>(-1, ex.Message) { Data = [] };
+                return new ApiResult<List<Gists>>(-1, ex.Message);
             }
         }
 
-        public async Task<ApiResult<string>> DeleteGist(string id)
+        public async Task<ApiResult<string>> DeleteGists(string id)
         {
             try
             {
@@ -184,17 +184,17 @@ namespace GiteeCli
 
                 if (resp.StatusCode != 204)
                 {
-                    return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = "" };
+                    return new ApiResult<string>(resp.StatusCode, "请求失败");
                 }
-                return new ApiResult<string>(0, "删除成功") { Data = "" };
+                return new ApiResult<string>(0, "删除成功");
             }
             catch (Exception ex)
             {
-                return new ApiResult<string>(-1, ex.Message) { Data = "" };
+                return new ApiResult<string>(-1, ex.Message);
             }
         }
 
-        public async Task<ApiResult<string>> CreateGist(string title, string file)
+        public async Task<ApiResult<string>> CreateGists(string title, string file)
         {
             try
             {
@@ -232,18 +232,18 @@ namespace GiteeCli
 
                 if (resp.StatusCode != 201)
                 {
-                    return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = "" };
+                    return new ApiResult<string>(resp.StatusCode, "请求失败");
                 }
-                return new ApiResult<string>(0, "删除成功") { Data = "" };
+                return new ApiResult<string>(0, "删除成功");
             }
             catch (Exception ex)
             {
                 AnsiConsole.WriteException(ex);
-                return new ApiResult<string>(-1, ex.Message) { Data = ex.ToString() };
+                return new ApiResult<string>(-1, ex.Message);
             }
         }
 
-        public async Task<ApiResult<Gists>> GetGist(string id)
+        public async Task<ApiResult<Gists>> GetGistsById(string id)
         {
             try
             {
@@ -289,7 +289,7 @@ namespace GiteeCli
             }
         }
 
-        public async Task<ApiResult<string>> UpdateGist(string id, string title, string file)
+        public async Task<ApiResult<string>> UpdateGists(string id, string title, string file)
         {
             try
             {
@@ -345,7 +345,7 @@ namespace GiteeCli
                 var resp = await HOST.AppendPathSegments("user").SetQueryParams(param).GetAsync();
                 if (resp.StatusCode != 200)
                 {
-                    return new ApiResult<string>(resp.StatusCode, "请求失败") { Data = "" };
+                    return new ApiResult<string>(resp.StatusCode, "请求失败");
                 }
 
                 var json = await resp.ResponseMessage.Content.ReadAsStringAsync();
@@ -356,7 +356,7 @@ namespace GiteeCli
             }
             catch (Exception ex)
             {
-                return new ApiResult<string>(-1, ex.Message) { Data = "" };
+                return new ApiResult<string>(-1, ex.Message);
             }
         }
 
