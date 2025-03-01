@@ -5,14 +5,14 @@ namespace Test
     public class UtilsTest
     {
         [Theory]
-        [InlineData("git@gitee.com:imyinnan/ob-timetickme.git")]
-        [InlineData("https://gitee.com/imyinnan/ob-timetickme.git")]
+        [InlineData("git@gitee.com:imyinnan/gitee-cli.git")]
+        [InlineData("https://gitee.com/imyinnan/gitee-cli.git")]
         public void TestGetOwnerRepoByUrl(string url)
         {
             var (own, repo) = Utils.GetOwnerRepoByUrl(url);
 
             Assert.Equal("imyinnan", own);
-            Assert.Equal("ob-timetickme", repo);
+            Assert.Equal("gitee-cli", repo);
         }
     }
 }

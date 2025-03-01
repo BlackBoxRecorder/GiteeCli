@@ -119,7 +119,7 @@ namespace Test
         }
 
         [Theory(Skip = "暂时禁用此测试")]
-        [InlineData("leo_song/bnuoge")]
+        [InlineData("imyinnan/gitee-cli")]
         public async Task TestCancelStarRepo(string fullName)
         {
             var token = Utils.GetToken();

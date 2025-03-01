@@ -19,9 +19,7 @@ namespace GiteeCli
         private static readonly string userFile = Path.Combine(giteeDir, "user.txt");
 
         /// <summary>
-        ///
-        /// https://gitee.com/imyinnan/ob-timetickme.git
-        /// git@gitee.com:imyinnan/ob-timetickme.git
+        /// 从一个url中获取用户名和仓库
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>

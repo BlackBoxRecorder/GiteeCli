@@ -45,6 +45,8 @@ gitee-cli clone -h
 
 ### 设置 Token
 
+##### 通过命令行设置
+
 设置第一步生成的私人令牌，在终端中执行：
 
 ```bash
@@ -56,6 +58,10 @@ gitee-cli set token 0c47b5a462c43765bc33a14ec7169
 ```bash
 gitee-cli get token
 ```
+
+##### 通过环境变量设置
+
+在系统上添加环境变量 GITEE_TOKEN = 0c47b5a462c43765bc33a14ec7169
 
 ### 列出所有仓库
 
