@@ -1,5 +1,9 @@
 # GiteeCli
 
+### Github 
+
+https://github.com/BlackBoxRecorder/GiteeCli
+
 ## 使用前准备
 
 ### 1.申请Gitee API Token
@@ -92,7 +96,7 @@ gitee-cli clone
 从 gitee.com 删除一个仓库，执行：
 
 ```bash
-gitee-cli delete <repo_name>
+gitee-cli delete --name <repo_name>
 ```
 
 ### 列出 Star 仓库
@@ -138,6 +142,14 @@ gitee-cli gists download --id z6datuobxwj4lm18ncv2e75
 ```bash
 gitee-cli gists update --id z6datuobxwj4lm18ncv2e75 --title 一条笔记update --file note.txt
 ```
+
+给一个代码片段追加一个文件：
+
+```bash
+gitee-cli gists update --id z6datuobxwj4lm18ncv2e75 --title 另一条笔记 --file note1.txt
+```
+
+现在代码片段 `z6datuobxwj4lm18ncv2e75` 中有两个文件：note.txt 和 note1.txt .
 
 ### 删除代码片段
 
