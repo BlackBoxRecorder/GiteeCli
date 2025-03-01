@@ -50,7 +50,7 @@ gitee-cli clone -h
 设置第一步生成的私人令牌，在终端中执行：
 
 ```bash
-gitee-cli set token 0c47b5a462c43765bc33a14ec7169
+gitee-cli set token --token 0c47b5a462c43765bc33a14ec7169
 ```
 
 获取Token：
