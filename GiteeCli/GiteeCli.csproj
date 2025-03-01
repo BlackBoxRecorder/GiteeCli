@@ -8,7 +8,7 @@
 		<PackAsTool>true</PackAsTool>
 		<ToolCommandName>gitee-cli</ToolCommandName>
 		<PackageId>gitee-cli</PackageId>
-		<Version>0.1.0</Version>
+		<Version>0.2.0</Version>
 		<Authors>timetickme</Authors>
 		<Company>timetickme</Company>
 		<Description>Gitee commandline tool</Description>

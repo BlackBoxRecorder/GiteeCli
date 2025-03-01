@@ -77,7 +77,7 @@ namespace GiteeCli
         }
 
         /// <summary>
-        /// 删除一个仓库
+        /// 从远端删除一个仓库
         /// </summary>
         /// <param name="name">仓库名称</param>
         /// <returns></returns>

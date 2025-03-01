@@ -112,6 +112,13 @@ namespace GiteeCli
                 {
                     AnsiConsole.WriteLine($"克隆仓库：{url}");
 
+                    var (_, repo) = Utils.GetOwnerRepoByUrl(url);
+                    var dir = Path.Combine(Environment.CurrentDirectory, repo);
+                    if (Directory.Exists(dir))
+                    {
+                        AnsiConsole.MarkupLine($"仓库 : [green]{repo}[/] 文件夹已存在，跳过");
+                        continue;
+                    }
                     var cmd = Cli.Wrap("git")
                         .WithArguments(args => args.Add("clone").Add(url).Add("--depth").Add(20));
 
@@ -261,7 +268,6 @@ namespace GiteeCli
         {
             var table = new Table();
 
-            table.AddColumn("序号");
             table.AddColumn("ID");
             table.AddColumn("描述");
             table.AddColumn("文件");
@@ -272,12 +278,7 @@ namespace GiteeCli
 
                 foreach (var file in files)
                 {
-                    table.AddRow(
-                        gist.Index.ToString().PadLeft(3, ' '),
-                        $"{gist.Id}",
-                        $"{gist.Description}",
-                        $"{file.Key}"
-                    );
+                    table.AddRow($"{gist.Id}", $"{gist.Description}", $"{file.Key}");
                 }
             }
 
